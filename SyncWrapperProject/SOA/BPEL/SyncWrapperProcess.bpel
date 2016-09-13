@@ -69,8 +69,8 @@
     <receive name="receiveInput" partnerLink="syncwrapperprocess_client" portType="client:SyncWrapperProcess" operation="process" variable="inputVariable" createInstance="yes"/>
     <extensionActivity>
       <bpelx:exec name="Java_Embedding1" language="java">
-        <![CDATA[// Configure this with the name of the service 
-		String serviceName = "syncwrapperprocess_client_ep"; 
+        <![CDATA[// Configure this with the name of the Asynchronous reference 
+		String referenceName = "AsyncInteractionProcessReference";
 		// Configure this with the name of the variable to populate 
 		String variableName = "CallbackURL"; 
 		// Non-configurable code 
@@ -84,12 +84,12 @@
 			javax.management.ObjectName runtimeService = new javax.management.ObjectName("com.bea:Name=RuntimeService,Type=weblogic.management.mbeanservers.runtime.RuntimeServiceMBean"); 
 			javax.management.ObjectName serverRuntime = (javax.management.ObjectName) beanServer.getAttribute(runtimeService, "ServerRuntime"); 
 			serverURL = (String) beanServer.invoke(serverRuntime, "getURL", params, types); 
-			oracle.fabric.composite.model.CompositeModel composite = mComponent.getComposite(); 
-			oracle.fabric.composite.model.WsBindingConfigModel binding = ((oracle.fabric.composite.model.WsBindingConfigModel) composite.getService(serviceName).getBindings().get(0)); 
-			oracle.fabric.composite.model.CompositeNameModel cnm = new oracle.fabric.composite.model.CompositeNameModel(composite.getFolder(), composite.getApplicationName(), composite.getName(), 
-					composite.getRevision(), null); 
+			
+			String compositeDN = mScope.getCubeInstance().getComponentDN().getCompositeDN();
+            String processName = mScope.getCubeInstance().getComponentDN().getChildName();
+
 			// Derived from the current hardcoded values in soa-suite 11g 
-			String computedURL = serverURL + "/soa-infra/services/" + cnm.toString() + "/" + binding.getConfigParent().getName(); 
+			String computedURL = serverURL + "/soa-infra/services/" + compositeDN +"/"+referenceName+"%23"+processName+"/"+referenceName;
 			setVariableData(variableName, computedURL); 
 			addAuditTrailEntry("Computed callback URL of " + computedURL); 
 		} catch (Exception ex) { 
