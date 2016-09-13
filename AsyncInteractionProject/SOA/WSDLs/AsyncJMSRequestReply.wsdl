@@ -1,0 +1,39 @@
+<wsdl:definitions
+     name="AsyncJMSRequestReply"
+     targetNamespace="http://xmlns.oracle.com/pcbpel/adapter/jms/Application1/AsyncInteractionProject/AsyncJMSRequestReply"
+     xmlns:tns="http://xmlns.oracle.com/pcbpel/adapter/jms/Application1/AsyncInteractionProject/AsyncJMSRequestReply"
+     xmlns:jca="http://xmlns.oracle.com/pcbpel/wsdl/jca/"
+     xmlns:plt="http://schemas.xmlsoap.org/ws/2003/05/partner-link/"
+     xmlns:msg_in_out="http://sync.facade.example/ns/orders"
+     xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    >
+  <plt:partnerLinkType name="AsyncJMSRequestReply_plt" >
+    <plt:role name="Request_role" >
+      <plt:portType name="tns:Request_ptt" />
+    </plt:role>
+    <plt:role name="Reply_role" >
+      <plt:portType name="tns:Reply_ptt" />
+    </plt:role>
+  </plt:partnerLinkType>
+    <wsdl:types>
+      <schema xmlns="http://www.w3.org/2001/XMLSchema" >
+        <import namespace="http://sync.facade.example/ns/orders" schemaLocation="../Schemas/SyncFacadeApp.xsd" />
+      </schema>
+    </wsdl:types>
+    <wsdl:message name="Request_msg_out">
+        <wsdl:part name="CreationRequest" element="msg_in_out:CreationRequest"/>
+    </wsdl:message>
+    <wsdl:message name="Reply_msg_in">
+        <wsdl:part name="CreationResponse" element="msg_in_out:CreationResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="Request_ptt">
+        <wsdl:operation name="Request">
+            <wsdl:input message="tns:Request_msg_out"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:portType name="Reply_ptt">
+        <wsdl:operation name="Reply">
+            <wsdl:input message="tns:Reply_msg_in"/>
+        </wsdl:operation>
+    </wsdl:portType>
+</wsdl:definitions>

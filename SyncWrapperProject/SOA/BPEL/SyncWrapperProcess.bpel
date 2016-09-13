@@ -1,0 +1,131 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<!--
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  Oracle JDeveloper BPEL Designer 
+  
+  Created: Tue Jan 13 14:50:34 IST 2015
+  Author:  sraghura
+  Type: BPEL 2.0 Process
+  Purpose: Synchronous BPEL Process
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-->
+<process name="SyncWrapperProcess"
+               targetNamespace="http://xmlns.oracle.com/Application1/SyncWrapperProject/SyncWrapperProcess"
+               xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+               xmlns:client="http://xmlns.oracle.com/Application1/SyncWrapperProject/SyncWrapperProcess"
+               xmlns:ora="http://schemas.oracle.com/xpath/extension"
+               xmlns:ui="http://xmlns.oracle.com/soa/designer"
+               xmlns:bpelx="http://schemas.oracle.com/bpel/extension"
+         xmlns:bpel="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:ns1="http://xmlns.oracle.com/Application1/AsyncInteractionProject/AsyncInteractionProcess"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+    <import ui:processWSDL="true" namespace="http://xmlns.oracle.com/Application1/SyncWrapperProject/SyncWrapperProcess" location="../WSDLs/SyncWrapperProcess.wsdl" importType="http://schemas.xmlsoap.org/wsdl/"/>
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        PARTNERLINKS                                                      
+        List of services participating in this BPEL process               
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    --> 
+  <partnerLinks>
+    <!-- 
+      The 'client' role represents the requester of this service. It is 
+      used for callback. The location and correlation information associated
+      with the client role are automatically set using WS-Addressing.
+    -->
+    <partnerLink name="syncwrapperprocess_client" partnerLinkType="client:SyncWrapperProcess" myRole="SyncWrapperProcessProvider"/>
+    <partnerLink name="AsyncInteractionProcessReference" partnerLinkType="ns1:AsyncInteractionProcess"
+                 partnerRole="AsyncInteractionProcessProvider" myRole="AsyncInteractionProcessRequester"/>
+  </partnerLinks>
+
+  <!-- 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      VARIABLES                                                        
+      List of messages and XML documents used within this BPEL process 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  -->
+  <variables>
+    <!-- Reference to the message passed as input during initiation -->
+    <variable name="inputVariable" messageType="client:SyncWrapperProcessRequestMessage"/>
+
+    <!-- Reference to the message that will be returned to the requester-->
+    <variable name="outputVariable" messageType="client:SyncWrapperProcessResponseMessage"/>
+    <variable name="Invoke_AsyncBPEL_process_InputVariable" messageType="ns1:AsyncInteractionProcessRequestMessage"/>
+    <variable name="Receive_AsyncBPEL_processResponse_InputVariable"
+              messageType="ns1:AsyncInteractionProcessResponseMessage"/>
+    <variable name="CallbackURL" type="xsd:string"/>
+  </variables>
+
+  <!-- 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     ORCHESTRATION LOGIC                                               
+     Set of activities coordinating the flow of messages across the    
+     services integrated within this business process                  
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  -->
+  <sequence name="main">
+
+    <!-- Receive input from requestor. (Note: This maps to operation defined in SyncWrapperProcess.wsdl) -->
+    <receive name="receiveInput" partnerLink="syncwrapperprocess_client" portType="client:SyncWrapperProcess" operation="process" variable="inputVariable" createInstance="yes"/>
+    <extensionActivity>
+      <bpelx:exec name="Java_Embedding1" language="java">
+        <![CDATA[// Configure this with the name of the service 
+		String serviceName = "syncwrapperprocess_client_ep"; 
+		// Configure this with the name of the variable to populate 
+		String variableName = "CallbackURL"; 
+		// Non-configurable code 
+		String serverURL = ""; 
+		Object[] params = new Object[] { "http" }; 
+		String[] types = new String[] { "java.lang.String" }; 
+		javax.naming.InitialContext ctx = null; 
+		try { 
+			ctx = new javax.naming.InitialContext(); 
+			javax.management.MBeanServer beanServer = (javax.management.MBeanServer) ctx.lookup("java:comp/env/jmx/runtime"); 
+			javax.management.ObjectName runtimeService = new javax.management.ObjectName("com.bea:Name=RuntimeService,Type=weblogic.management.mbeanservers.runtime.RuntimeServiceMBean"); 
+			javax.management.ObjectName serverRuntime = (javax.management.ObjectName) beanServer.getAttribute(runtimeService, "ServerRuntime"); 
+			serverURL = (String) beanServer.invoke(serverRuntime, "getURL", params, types); 
+			oracle.fabric.composite.model.CompositeModel composite = mComponent.getComposite(); 
+			oracle.fabric.composite.model.WsBindingConfigModel binding = ((oracle.fabric.composite.model.WsBindingConfigModel) composite.getService(serviceName).getBindings().get(0)); 
+			oracle.fabric.composite.model.CompositeNameModel cnm = new oracle.fabric.composite.model.CompositeNameModel(composite.getFolder(), composite.getApplicationName(), composite.getName(), 
+					composite.getRevision(), null); 
+			// Derived from the current hardcoded values in soa-suite 11g 
+			String computedURL = serverURL + "/soa-infra/services/" + cnm.toString() + "/" + binding.getConfigParent().getName(); 
+			setVariableData(variableName, computedURL); 
+			addAuditTrailEntry("Computed callback URL of " + computedURL); 
+		} catch (Exception ex) { 
+			addAuditTrailEntry(ex); 
+		}]]>
+      </bpelx:exec>
+    </extensionActivity>
+    <assign name="Transformation_Req">
+      <bpelx:annotation>
+        <bpelx:pattern patternName="bpelx:transformation"></bpelx:pattern>
+      </bpelx:annotation>
+      <copy>
+        <from>ora:doXSLTransformForDoc("../Transformations/Transformation_1.xsl", $inputVariable.payload)</from>
+        <to variable="Invoke_AsyncBPEL_process_InputVariable" part="payload"/>
+      </copy>
+    </assign>
+    <invoke name="Invoke_AsyncBPEL" partnerLink="AsyncInteractionProcessReference"
+            portType="ns1:AsyncInteractionProcess" operation="process"
+            inputVariable="Invoke_AsyncBPEL_process_InputVariable" bpelx:invokeAsDetail="no">
+      <bpelx:toProperties>
+        <bpelx:toProperty name="wsa.replyToAddress" variable="CallbackURL"/>
+      </bpelx:toProperties>
+    </invoke>
+    <receive name="Receive_AsyncBPEL" partnerLink="AsyncInteractionProcessReference"
+             portType="ns1:AsyncInteractionProcessCallback" operation="processResponse"
+             variable="Receive_AsyncBPEL_processResponse_InputVariable"/>
+    <assign name="Transformation_Res">
+      <bpelx:annotation>
+        <bpelx:pattern patternName="bpelx:transformation"></bpelx:pattern>
+      </bpelx:annotation>
+      <copy>
+        <from>ora:doXSLTransformForDoc("../Transformations/Transformation_2.xsl", $Receive_AsyncBPEL_processResponse_InputVariable.payload)</from>
+        <to variable="outputVariable" part="payload"/>
+      </copy>
+    </assign>
+    <!-- Generate reply to synchronous request -->
+    <reply name="replyOutput" partnerLink="syncwrapperprocess_client" portType="client:SyncWrapperProcess" operation="process" variable="outputVariable"/>
+  </sequence>
+</process>

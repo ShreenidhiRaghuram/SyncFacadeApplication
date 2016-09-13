@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns="http://sync.facade.example/ns/orders"
+            targetNamespace="http://sync.facade.example/ns/orders"
+            elementFormDefault="qualified">
+			
+  <xsd:element name="CreationRequest">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="OrderId" type="xsd:string"/>
+		<xsd:element name="OrderType" type="xsd:string"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  
+  
+    <xsd:element name="CreationResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="OrderId" type="xsd:string"/>
+		<xsd:element name="OrderStatus" type="xsd:string"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  
+    <xsd:element name="CreationFault">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="OrderFaultCode" type="xsd:string"/>
+		<xsd:element name="OrderFaultDesc" type="xsd:string"/>
+		<xsd:element name="OrderFaultActor" type="xsd:string"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+
+  </xsd:schema>

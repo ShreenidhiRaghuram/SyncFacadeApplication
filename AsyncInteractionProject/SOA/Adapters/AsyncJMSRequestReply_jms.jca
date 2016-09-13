@@ -1,0 +1,21 @@
+<adapter-config name="AsyncJMSRequestReply" adapter="jms" wsdlLocation="../WSDLs/AsyncJMSRequestReply.wsdl" xmlns="http://platform.integration.oracle/blocks/adapter/fw/metadata">
+  
+  <connection-factory location="eis/wls/Queue" UIJmsProvider="WLSJMS" UiOperationMode="Asynchronous" UIConnectionName="1212SSDServer"/>
+  <endpoint-activation portType="Reply_ptt" operation="Reply" UITransmissionPrimitive="Request-response">
+    <activation-spec className="oracle.tip.adapter.jms.inbound.JmsConsumeActivationSpec">
+      <property name="PayloadType" value="TextMessage"/>
+      <property name="UseMessageListener" value="false"/>
+      <property name="DestinationName" value="jms/ResponseQueue"/>
+    </activation-spec>
+  </endpoint-activation>
+
+  <endpoint-interaction portType="Request_ptt" operation="Request" UITransmissionPrimitive="Request-response">
+    <interaction-spec className="oracle.tip.adapter.jms.outbound.JmsProduceInteractionSpec">
+      <property name="TimeToLive" value="0"/>
+      <property name="PayloadType" value="TextMessage"/>
+      <property name="DeliveryMode" value="Persistent"/>
+      <property name="DestinationName" value="jms/RequestQueue"/>
+    </interaction-spec>
+  </endpoint-interaction>
+
+</adapter-config>

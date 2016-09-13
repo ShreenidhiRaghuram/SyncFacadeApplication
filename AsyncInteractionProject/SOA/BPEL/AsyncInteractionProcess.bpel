@@ -1,0 +1,189 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<!--
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  Oracle JDeveloper BPEL Designer 
+  
+  Created: Tue Jan 13 12:45:57 IST 2015
+  Author:  sraghura
+  Type: BPEL 2.0 Process
+  Purpose: Asynchronous BPEL Process
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-->
+<process name="AsyncInteractionProcess"
+         targetNamespace="http://xmlns.oracle.com/Application1/AsyncInteractionProject/AsyncInteractionProcess"
+         xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:client="http://xmlns.oracle.com/Application1/AsyncInteractionProject/AsyncInteractionProcess"
+         xmlns:ora="http://schemas.oracle.com/xpath/extension"
+         xmlns:ui="http://xmlns.oracle.com/soa/designer"
+         xmlns:bpelx="http://schemas.oracle.com/bpel/extension"
+         xmlns:bpel="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:ns1="http://xmlns.oracle.com/pcbpel/adapter/jms/Application1/AsyncInteractionProject/AsyncJMSRequestReply"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+         xmlns:xp20="http://www.oracle.com/XSL/Transform/java/oracle.tip.pc.services.functions.Xpath20"
+         xmlns:bpws="http://schemas.xmlsoap.org/ws/2003/03/business-process/"
+         xmlns:oraext="http://www.oracle.com/XSL/Transform/java/oracle.tip.pc.services.functions.ExtFunc"
+         xmlns:dvm="http://www.oracle.com/XSL/Transform/java/oracle.tip.dvm.LookupValue"
+         xmlns:hwf="http://xmlns.oracle.com/bpel/workflow/xpath"
+         xmlns:ids="http://xmlns.oracle.com/bpel/services/IdentityService/xpath"
+         xmlns:bpm="http://xmlns.oracle.com/bpmn20/extensions" xmlns:ess="http://xmlns.oracle.com/scheduler"
+         xmlns:xdk="http://schemas.oracle.com/bpel/extension/xpath/function/xdk"
+         xmlns:xref="http://www.oracle.com/XSL/Transform/java/oracle.tip.xref.xpath.XRefXPathFunctions"
+         xmlns:ldap="http://schemas.oracle.com/xpath/extension/ldap"
+         xmlns:ns2="http://xmlns.oracle.com/pcbpel/adapter/jms/Application1/AsyncInteractionProject/JMS_StoreDelayedResponse">
+
+    <import ui:processWSDL="true" namespace="http://xmlns.oracle.com/Application1/AsyncInteractionProject/AsyncInteractionProcess" location="../WSDLs/AsyncInteractionProcess.wsdl" importType="http://schemas.xmlsoap.org/wsdl/"/>
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        PARTNERLINKS                                                      
+        List of services participating in this BPEL process               
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    --> 
+    <partnerLinks>
+        <!-- 
+      The 'client' role represents the requester of this service. It is 
+      used for callback. The location and correlation information associated
+      with the client role are automatically set using WS-Addressing.
+    -->
+        <partnerLink name="asyncinteractionprocess_client" partnerLinkType="client:AsyncInteractionProcess" myRole="AsyncInteractionProcessProvider" partnerRole="AsyncInteractionProcessRequester"/>
+        <partnerLink name="AsyncJMSRequestReply" partnerLinkType="ns1:AsyncJMSRequestReply_plt"
+                     partnerRole="Request_role" myRole="Reply_role"/>
+        <partnerLink name="JMS_StoreDelayedResponse" partnerLinkType="ns2:Produce_Message_plt"
+                     partnerRole="Produce_Message_role"/>
+    </partnerLinks>
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        VARIABLES                                                        
+        List of messages and XML documents used within this BPEL process 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    -->
+    <variables>
+        <!-- Reference to the message passed as input during initiation -->
+        <variable name="inputVariable" messageType="client:AsyncInteractionProcessRequestMessage"/>
+
+        <!-- Reference to the message that will be sent back to the requester during callback -->
+        <variable name="outputVariable" messageType="client:AsyncInteractionProcessResponseMessage"/>
+        <variable name="delayedResponse" type="xsd:boolean">
+            <from><literal>false</literal></from>
+        </variable>
+        <variable name="Invoke_ProduceJMSRequest_Request_InputVariable" messageType="ns1:Request_msg_out"/>
+        <variable name="Receive_ConsumeJMSResponse_Reply_InputVariable" messageType="ns1:Reply_msg_in"/>
+        <variable name="Invoke_JMS_PersistDelayedResponse_Produce_Message_InputVariable"
+                  messageType="ns2:Produce_Message_msg"/>
+    </variables>
+    <eventHandlers>
+        <onAlarm>
+            <for>'PT3M'</for>
+            <scope name="Scope2">
+                <sequence name="Sequence3">
+                    <empty name="No_Response"/>
+                    <empty name="Persist_Request_Message"/>
+                    <exit name="Terminate"/>
+                </sequence>
+            </scope>
+        </onAlarm>
+    </eventHandlers>
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+       ORCHESTRATION LOGIC                                               
+       Set of activities coordinating the flow of messages across the    
+       services integrated within this business process                  
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    -->
+    <sequence name="main">
+        <!-- Receive input from requestor. (Note: This maps to operation defined in AsyncInteractionProcess.wsdl) -->
+        <receive name="receiveInput" partnerLink="asyncinteractionprocess_client" portType="client:AsyncInteractionProcess" operation="process" variable="inputVariable" createInstance="yes"/>
+        <empty name="SetTitle"/>
+        <assign name="Transformation_req">
+            <bpelx:annotation>
+                <bpelx:pattern patternName="bpelx:transformation"></bpelx:pattern>
+            </bpelx:annotation>
+            <copy>
+                <from>ora:doXSLTransformForDoc("../Transformations/Transformation_Req_2.xsl", $inputVariable.payload)</from>
+                <to variable="Invoke_ProduceJMSRequest_Request_InputVariable" part="CreationRequest"/>
+            </copy>
+        </assign>
+        <scope name="JMSComms_Scope">
+            <eventHandlers>
+                <onAlarm>
+                    <for>'PT30S'</for>
+                    <scope name="Scope1">
+                        <sequence name="Sequence2">
+                            <assign name="AssignDelayed">
+                                <copy>
+                                    <from><literal>true</literal></from>
+                                    <to>$delayedResponse</to>
+                                </copy>
+                            </assign>
+                            <assign name="AssignDelayedResponse">
+                                <bpelx:annotation>
+                                    <bpelx:pattern patternName="bpelx:transformation"></bpelx:pattern>
+                                </bpelx:annotation>
+                                <copy>
+                                    <from>ora:doXSLTransformForDoc("../Transformations/Transformation_1.xsl", $inputVariable.payload)</from>
+                                    <to variable="outputVariable" part="payload"/>
+                                </copy>
+                            </assign>
+                            <invoke name="Invoke_NoReply_Callback"
+                                    partnerLink="asyncinteractionprocess_client"
+                                    portType="client:AsyncInteractionProcessCallback" operation="processResponse" inputVariable="outputVariable"
+                                    bpelx:invokeAsDetail="no"/>
+                        </sequence>
+                    </scope>
+                </onAlarm>
+            </eventHandlers>
+            <sequence>
+                <invoke name="Invoke_ProduceJMSRequest" partnerLink="AsyncJMSRequestReply" portType="ns1:Request_ptt"
+                        operation="Request" inputVariable="Invoke_ProduceJMSRequest_Request_InputVariable"
+                        bpelx:invokeAsDetail="no"/>
+                <receive name="Receive_ConsumeJMSResponse" partnerLink="AsyncJMSRequestReply" portType="ns1:Reply_ptt"
+                         operation="Reply" variable="Receive_ConsumeJMSResponse_Reply_InputVariable"/>
+            </sequence>
+        </scope>
+        <if name="If1">
+            <documentation>
+                <![CDATA[TimelyResponse]]>
+            </documentation>
+            <condition>not($delayedResponse)</condition>
+            <sequence>
+                <assign name="Transformation_res">
+                    <bpelx:annotation>
+                        <bpelx:pattern patternName="bpelx:transformation"></bpelx:pattern>
+                    </bpelx:annotation>
+                    <copy>
+                        <from>ora:doXSLTransformForDoc("../Transformations/Transformation_res_2.xsl", $Receive_ConsumeJMSResponse_Reply_InputVariable.CreationResponse)</from>
+                        <to variable="outputVariable" part="payload"/>
+                    </copy>
+                </assign>
+                <invoke name="callbackClient" partnerLink="asyncinteractionprocess_client"
+                        portType="client:AsyncInteractionProcessCallback" operation="processResponse"
+                        inputVariable="outputVariable" bpelx:invokeAsDetail="no"/>
+            </sequence>
+            <else>
+                <documentation>
+                    <![CDATA[DelayedResponse]]>
+                </documentation>
+                <sequence name="Sequence4">
+                    <assign name="Transformation1">
+                        <bpelx:annotation>
+                            <bpelx:pattern patternName="bpelx:transformation"></bpelx:pattern>
+                        </bpelx:annotation>
+                        <copy>
+                            <from>ora:doXSLTransformForDoc("../Transformations/Transformation_res_2.xsl", $Receive_ConsumeJMSResponse_Reply_InputVariable.CreationResponse)</from>
+                            <to variable="Invoke_JMS_PersistDelayedResponse_Produce_Message_InputVariable" part="body"/>
+                        </copy>
+                    </assign>
+                    <empty name="Persist_DelayedResponse"/>
+                    <invoke name="Invoke_JMS_PersistDelayedResponse"
+                            partnerLink="JMS_StoreDelayedResponse" portType="ns2:Produce_Message_ptt"
+                            operation="Produce_Message"
+                            inputVariable="Invoke_JMS_PersistDelayedResponse_Produce_Message_InputVariable"
+                            bpelx:invokeAsDetail="no"/>
+                </sequence>
+            </else>
+        </if>
+        <!-- 
+          Asynchronous callback to the requester. (Note: the callback location and correlation id is transparently handled using WS-addressing.)
+        -->
+    </sequence>
+</process>

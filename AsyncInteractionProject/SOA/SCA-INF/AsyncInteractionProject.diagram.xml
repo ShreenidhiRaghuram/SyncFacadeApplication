@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dgm:gDiagram xmlns:dgm="http://xmlns.oracle.com/sca/soadgm">
+    <dgm:gService name="asyncinteractionprocess_client_ep">
+        <dgm:body borderWidth="2" arcRad="20" X="21" Y="108" width="137" height="96">
+            <dgm:borderColor r="153" g="153" b="153"/>
+            <dgm:bgColor r="255" g="255" b="255"/>
+        </dgm:body>
+        <dgm:shadow arcRad="20" X="11" Y="101" width="156" height="110">
+            <dgm:bgColor r="196" g="228" b="240"/>
+        </dgm:shadow>
+        <dgm:outputPort name="asyncinteractionprocess_client_ep" X="127" Y="0" diameter="20" imageURI="oracle/tip/tools/ide/fabric/resource/image/visuals_rd1/servicereference.png" interface="http://xmlns.oracle.com/Application1/AsyncInteractionProject/AsyncInteractionProcess#wsdl.interface(AsyncInteractionProcess)" callbackInterface="http://xmlns.oracle.com/Application1/AsyncInteractionProject/AsyncInteractionProcess#wsdl.interface(AsyncInteractionProcessCallback)"/>
+        <dgm:nodeIcon URI="/oracle/tip/tools/ide/adapters/designtime/adapter/images/soap_service_20x20.png" X="20" Y="4" width="20" height="20"/>
+        <dgm:operations>
+            <dgm:item>process</dgm:item>
+            <dgm:item>processResponse</dgm:item>
+        </dgm:operations>
+    </dgm:gService>
+    <dgm:gReference name="AsyncJMSRequestReply">
+        <dgm:body borderWidth="2" arcRad="20" X="676" Y="26" width="136" height="96">
+            <dgm:borderColor r="153" g="153" b="153"/>
+            <dgm:bgColor r="255" g="255" b="255"/>
+        </dgm:body>
+        <dgm:shadow arcRad="20" X="666" Y="19" width="156" height="110">
+            <dgm:bgColor r="196" g="228" b="240"/>
+        </dgm:shadow>
+        <dgm:inputPort name="AsyncJMSRequestReply" X="-10" Y="0" diameter="20" imageURI="oracle/tip/tools/ide/fabric/resource/image/visuals_rd1/servicereference.png" interface="http://xmlns.oracle.com/pcbpel/adapter/jms/Application1/AsyncInteractionProject/AsyncJMSRequestReply#wsdl.interface(Request_ptt)" callbackInterface="http://xmlns.oracle.com/pcbpel/adapter/jms/Application1/AsyncInteractionProject/AsyncJMSRequestReply#wsdl.interface(Reply_ptt)"/>
+        <dgm:nodeIcon URI="/oracle/tip/tools/ide/adapters/designtime/adapter/images/jms_adapter_20x20.png" X="27" Y="4" width="20" height="20"/>
+        <dgm:operations>
+            <dgm:item>Request</dgm:item>
+            <dgm:item>Reply</dgm:item>
+        </dgm:operations>
+    </dgm:gReference>
+    <dgm:gReference name="JMS_StoreDelayedResponse">
+        <dgm:body borderWidth="2" arcRad="20" X="676" Y="156" width="136" height="84">
+            <dgm:borderColor r="153" g="153" b="153"/>
+            <dgm:bgColor r="255" g="255" b="255"/>
+        </dgm:body>
+        <dgm:shadow arcRad="20" X="666" Y="149" width="156" height="98">
+            <dgm:bgColor r="196" g="228" b="240"/>
+        </dgm:shadow>
+        <dgm:inputPort name="JMS_StoreDelayedResponse" X="-10" Y="0" diameter="20" imageURI="oracle/tip/tools/ide/fabric/resource/image/visuals_rd1/servicereference.png" interface="http://xmlns.oracle.com/pcbpel/adapter/jms/Application1/AsyncInteractionProject/JMS_StoreDelayedResponse#wsdl.interface(Produce_Message_ptt)"/>
+        <dgm:nodeIcon URI="/oracle/tip/tools/ide/adapters/designtime/adapter/images/jms_adapter_20x20.png" X="27" Y="4" width="20" height="20"/>
+        <dgm:operations>
+            <dgm:item>Produce_Message</dgm:item>
+        </dgm:operations>
+    </dgm:gReference>
+    <dgm:gComponent name="AsyncInteractionProcess">
+        <dgm:body borderWidth="2" arcRad="20" X="352" Y="93" width="130" height="86">
+            <dgm:borderColor r="69" g="113" b="140"/>
+            <dgm:lightBgColor r="166" g="208" b="230"/>
+            <dgm:darkBgColor r="99" g="162" b="201"/>
+        </dgm:body>
+        <dgm:shadow arcRad="20" X="342" Y="86" width="150" height="102">
+            <dgm:bgColor r="196" g="228" b="240"/>
+        </dgm:shadow>
+        <dgm:inputPort name="asyncinteractionprocess_client" X="-10" Y="15" diameter="20" imageURI="oracle/tip/tools/ide/fabric/resource/image/visuals_rd1/servicereference.png" interface="http://xmlns.oracle.com/Application1/AsyncInteractionProject/AsyncInteractionProcess#wsdl.interface(AsyncInteractionProcess)" callbackInterface="http://xmlns.oracle.com/Application1/AsyncInteractionProject/AsyncInteractionProcess#wsdl.interface(AsyncInteractionProcessCallback)"/>
+        <dgm:outputPort name="AsyncJMSRequestReply" X="120" Y="15" diameter="20" imageURI="oracle/tip/tools/ide/fabric/resource/image/visuals_rd1/servicereference.png" interface="http://xmlns.oracle.com/pcbpel/adapter/jms/Application1/AsyncInteractionProject/AsyncJMSRequestReply#wsdl.interface(Request_ptt)" callbackInterface="http://xmlns.oracle.com/pcbpel/adapter/jms/Application1/AsyncInteractionProject/AsyncJMSRequestReply#wsdl.interface(Reply_ptt)"/>
+        <dgm:outputPort name="JMS_StoreDelayedResponse" X="120" Y="40" diameter="20" imageURI="oracle/tip/tools/ide/fabric/resource/image/visuals_rd1/servicereference.png" interface="http://xmlns.oracle.com/pcbpel/adapter/jms/Application1/AsyncInteractionProject/JMS_StoreDelayedResponse#wsdl.interface(Produce_Message_ptt)"/>
+        <dgm:nodeIcon URI="/oracle/tip/tools/ide/bpel/shared/plugins/resources/images/soa/process_20x20.png" X="10" Y="4" width="20" height="20"/>
+    </dgm:gComponent>
+    <dgm:gWireLink source="asyncinteractionprocess_client_ep" target="AsyncInteractionProcess/asyncinteractionprocess_client" width="2">
+        <dgm:gSegment X1="168" Y1="118" X2="342" Y2="118"/>
+        <dgm:baseColor r="153" g="153" b="153"/>
+        <dgm:selectedColor r="49" g="106" b="196"/>
+    </dgm:gWireLink>
+    <dgm:gWireLink source="AsyncInteractionProcess/AsyncJMSRequestReply" target="AsyncJMSRequestReply" width="2">
+        <dgm:gSegment X1="492" Y1="118" X2="516" Y2="118"/>
+        <dgm:gSegment X1="516" Y1="118" X2="516" Y2="36"/>
+        <dgm:gSegment X1="516" Y1="36" X2="666" Y2="36"/>
+        <dgm:baseColor r="153" g="153" b="153"/>
+        <dgm:selectedColor r="49" g="106" b="196"/>
+    </dgm:gWireLink>
+    <dgm:gWireLink source="AsyncInteractionProcess/JMS_StoreDelayedResponse" target="JMS_StoreDelayedResponse" width="2">
+        <dgm:gSegment X1="492" Y1="143" X2="516" Y2="143"/>
+        <dgm:gSegment X1="516" Y1="143" X2="516" Y2="166"/>
+        <dgm:gSegment X1="516" Y1="166" X2="666" Y2="166"/>
+        <dgm:baseColor r="153" g="153" b="153"/>
+        <dgm:selectedColor r="49" g="106" b="196"/>
+    </dgm:gWireLink>
+</dgm:gDiagram>

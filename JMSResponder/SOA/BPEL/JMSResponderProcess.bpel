@@ -1,0 +1,88 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<!--
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  Oracle JDeveloper BPEL Designer 
+  
+  Created: Wed Jan 14 11:15:17 IST 2015
+  Author:  sraghura
+  Type: BPEL 2.0 Process
+  Purpose: One Way BPEL Process
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-->
+<process name="JMSResponderProcess"
+               targetNamespace="http://xmlns.oracle.com/Application1/JMSResponder/JMSResponderProcess"
+               xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+               xmlns:client="http://xmlns.oracle.com/Application1/JMSResponder/JMSResponderProcess"
+               xmlns:ora="http://schemas.oracle.com/xpath/extension"
+               xmlns:ui="http://xmlns.oracle.com/soa/designer"
+               xmlns:bpel="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:ns1="http://xmlns.oracle.com/pcbpel/adapter/jms/Application1/JMSResponder/jmsService"
+         xmlns:bpelx="http://schemas.oracle.com/bpel/extension"
+         xmlns:ns2="http://xmlns.oracle.com/pcbpel/adapter/jms/Application1/JMSResponder/jmsReference"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <!-- 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      PARTNERLINKS                                                      
+      List of services participating in this BPEL process               
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  -->
+  <import namespace="http://xmlns.oracle.com/pcbpel/adapter/jms/Application1/JMSResponder/jmsService"
+          location="../WSDLs/jmsService.wsdl" importType="http://schemas.xmlsoap.org/wsdl/" ui:processWSDL="true"/>
+  <partnerLinks>
+    <!-- 
+      The 'client' role represents the requester of this service. It is 
+      used for callback. The location and correlation information associated
+      with the client role are automatically set using WS-Addressing.
+    -->
+    <partnerLink name="jmsService" partnerLinkType="ns1:Consume_Message_plt" myRole="Consume_Message_role"/>
+    <partnerLink name="jmsReference" partnerLinkType="ns2:Produce_Message_plt" partnerRole="Produce_Message_role"/>
+  </partnerLinks>
+
+  <!-- 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      VARIABLES                                                        
+      List of messages and XML documents used within this BPEL process 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  -->
+  <variables>
+    <!-- Reference to the message passed as input during initiation -->
+    <!--variable name="inputVariable" messageType="client:JMSResponderProcessRequestMessage"/-->
+    <variable name="receiveInput_Consume_Message_InputVariable" messageType="ns1:Consume_Message_msg"/>
+    <variable name="Invoke_postResponse_Produce_Message_InputVariable" messageType="ns2:Produce_Message_msg"/>
+    <variable name="NativeCorrID" type="xsd:string"/>
+  </variables>
+
+  <!-- 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     ORCHESTRATION LOGIC                                               
+     Set of activities coordinating the flow of messages across the    
+     services integrated within this business process                  
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  -->
+  <sequence name="main">
+
+    <!-- Receive input from requestor. (Note: This maps to operation defined in JMSResponderProcess.wsdl) -->
+    <receive name="receiveInput" variable="receiveInput_Consume_Message_InputVariable" createInstance="yes" partnerLink="jmsService"
+             portType="ns1:Consume_Message_ptt" operation="Consume_Message">
+      <bpelx:fromProperties>
+        <bpelx:fromProperty name="jca.jms.JMSMessageID" variable="NativeCorrID"/>
+      </bpelx:fromProperties>
+    </receive>
+    <assign name="Transformation1">
+      <bpelx:annotation>
+        <bpelx:pattern patternName="bpelx:transformation"></bpelx:pattern>
+      </bpelx:annotation>
+      <copy>
+        <from>ora:doXSLTransformForDoc("../Transformations/Transformation_1.xsl", $receiveInput_Consume_Message_InputVariable.body)</from>
+        <to variable="Invoke_postResponse_Produce_Message_InputVariable" part="body"/>
+      </copy>
+    </assign>
+    <invoke name="Invoke_postResponse" partnerLink="jmsReference"
+            portType="ns2:Produce_Message_ptt" operation="Produce_Message"
+            inputVariable="Invoke_postResponse_Produce_Message_InputVariable" bpelx:invokeAsDetail="no">
+      <bpelx:toProperties>
+        <bpelx:toProperty name="jca.jms.JMSCorrelationID" variable="NativeCorrID"/>
+      </bpelx:toProperties>
+    </invoke>
+  </sequence>
+</process>
